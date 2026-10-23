@@ -1,0 +1,9 @@
+target/
+data/
+*.mv.db
+*.trace.db
+error-log.txt
+startup-error.txt
+.env
+.idea/
+.vscode/

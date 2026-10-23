@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fc;
+            color: #14213d;
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        form, .job {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+        input, select, textarea, button {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            margin: 10px 0;
+        }
+        button {
+            background: #2d5da8;
+            color: white;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .delete {
+            background: #b42318;
+        }
+        #message { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Job Application Tracker</h1>
+    <p>Keep track of the jobs you apply for.</p>
+
+    <form id="jobForm">
+        <input id="companyName" placeholder="Company name" required>
+        <input id="jobRole" placeholder="Job role" required>
+
+        <select id="status">
+            <option value="Applied">Applied</option>
+            <option value="Interview">Interview</option>
+            <option value="Selected">Selected</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+
+        <input id="applicationDate" type="date" required>
+        <textarea id="notes" placeholder="Notes (optional)"></textarea>
+        <button type="submit">Add Job Application</button>
+    </form>
+
+    <p id="message" role="status"></p>
+    <h2>My Applications</h2>
+    <div id="jobList">Loading applications...</div>
+
+    <script>
+        const API = "/api/jobs";
+        const form = document.getElementById("jobForm");
+        const message = document.getElementById("message");
+        const jobList = document.getElementById("jobList");
+
+        async function loadJobs() {
+            try {
+                const response = await fetch(API);
+                if (!response.ok) throw new Error("Could not load jobs");
+
+                const jobs = await response.json();
+                jobList.replaceChildren();
+
+                if (jobs.length === 0) {
+                    jobList.textContent = "No applications yet. Add your first job!";
+                    return;
+                }
+
+                jobs.forEach(job => {
+                    const card = document.createElement("div");
+                    card.className = "job";
+
+                    const title = document.createElement("h3");
+                    title.textContent = job.companyName + " — " + job.jobRole;
+
+                    const details = document.createElement("p");
+                    details.textContent =
+                        "Status: " + job.status +
+                        " | Date: " + (job.applicationDate || "Not specified");
+
+                    const notes = document.createElement("p");
+                    notes.textContent = "Notes: " + (job.notes || "None");
+
+                    const deleteButton = document.createElement("button");
+                    deleteButton.className = "delete";
+                    deleteButton.textContent = "Delete";
+                    deleteButton.addEventListener("click", async () => {
+                        if (!confirm("Delete this application?")) return;
+
+                        try {
+                            const result = await fetch(API + "/" + job.id, {
+                                method: "DELETE"
+                            });
+                            if (!result.ok) throw new Error();
+                            message.textContent = "Application deleted.";
+                            loadJobs();
+                        } catch {
+                            message.textContent = "Could not delete application.";
+                        }
+                    });
+
+                    card.append(title, details, notes, deleteButton);
+                    jobList.appendChild(card);
+                });
+            } catch {
+                jobList.textContent = "Could not load applications.";
+                message.textContent = "Check that the Spring Boot server is running.";
+            }
+        }
+
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            message.textContent = "Saving...";
+
+            const job = {
+                companyName: document.getElementById("companyName").value.trim(),
+                jobRole: document.getElementById("jobRole").value.trim(),
+                status: document.getElementById("status").value,
+                applicationDate: document.getElementById("applicationDate").value,
+                notes: document.getElementById("notes").value.trim()
+            };
+
+            try {
+                const response = await fetch(API, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(job)
+                });
+
+                if (!response.ok) throw new Error("Save failed");
+
+                form.reset();
+                message.textContent = "Job application saved successfully!";
+                await loadJobs();
+            } catch {
+                message.textContent = "Could not save. Check the server and try again.";
+            }
+        });
+
+        loadJobs();
+    </script>
+</body>
+</html>
