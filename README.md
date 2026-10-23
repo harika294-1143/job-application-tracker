@@ -22,6 +22,22 @@ A web-based application built using Java and Spring Boot to help users organize 
 
 
 
+\## Screenshots
+
+
+
+\### Job Application Tracker
+
+!\[Job Application Tracker](screenshots/job-tracker.png)
+
+
+
+\### Portfolio Page
+
+!\[Portfolio Page](screenshots/portfolio.png)
+
+
+
 \## Technologies Used
 
 
